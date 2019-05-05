@@ -9,6 +9,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
@@ -23,7 +24,11 @@ public class Sudoku extends JPanel {
 
 	private JTextField[][] numeros;
 
-//	private int numToResaltar;
+	private Color gris = Color.LIGHT_GRAY; // Color.getHSBColor(0,0, 84);
+
+	private JFrame ventana;
+
+	private int dificultad;
 
 	/**
 	 * Create the panel.
@@ -32,6 +37,7 @@ public class Sudoku extends JPanel {
 	 */
 	public Sudoku(JFrame frame, int dificultad) {
 		this.numeros = new JTextField[9][9];
+		this.ventana = frame;
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] { 0, 0 };
 		gridBagLayout.rowHeights = new int[] { 0, 0 };
@@ -40,7 +46,7 @@ public class Sudoku extends JPanel {
 		gridBagLayout.rowWeights = ds;
 		this.setLayout(gridBagLayout);
 		setVista();
-
+		this.dificultad=dificultad;
 		int cantNumeros = (int) (Math.random() * (dificultad * 15)) + 20;
 
 		while (!generadorInicial())
@@ -58,6 +64,7 @@ public class Sudoku extends JPanel {
 			JTextField jTextField = this.numeros[x][y];
 
 			jTextField.setText("");
+			jTextField.setEnabled(true);
 		}
 	}
 
@@ -110,7 +117,7 @@ public class Sudoku extends JPanel {
 						int indY = l.y / tamCelda;
 
 						if (((indX / 3 + indY / 3)) % 2 == 1)
-							temp.setBackground(Color.getHSBColor(0, 0, 211));
+							temp.setBackground(gris);
 						else
 							temp.setBackground(Color.WHITE);
 
@@ -127,15 +134,18 @@ public class Sudoku extends JPanel {
 						int indY = l.y / tamCelda;
 
 						if (((indX / 3 + indY / 3)) % 2 == 1)
-							temp.setBackground(Color.getHSBColor(0, 0, 211));
+							temp.setBackground(gris);
 						else
 							temp.setBackground(Color.WHITE);
 
-						if (!add(indX, indY, num) && e.getKeyCode() != KeyEvent.VK_BACK_SPACE) {
-							temp.setBackground(Color.RED);
+						if (e.getKeyCode() != KeyEvent.VK_BACK_SPACE) {
+							if (add(indX, indY, num))
+								temp.setText(e.getKeyChar() + "");
+							else
+								temp.setBackground(Color.RED);
 						}
-
-						temp.setText(e.getKeyChar() + "");
+						if (gano())
+							ganar();
 					}
 				});
 
@@ -144,16 +154,52 @@ public class Sudoku extends JPanel {
 				gbc_sudoku.gridx = x;
 				gbc_sudoku.gridy = y;
 
-				if (((x / 3 + y / 3)) % 2 == 1)
-					temp.setBackground(Color.getHSBColor(0, 0, 211));
-				else
+				if (((x / 3 + y / 3)) % 2 == 1) {
+					temp.setBackground(gris);
+				} else
 					temp.setBackground(Color.WHITE);
 
+				temp.setEnabled(false);
+				temp.setDisabledTextColor(Color.BLACK);
+				temp.setHorizontalAlignment(JTextField.CENTER);
 				this.add(temp, gbc_sudoku);
 
 				this.numeros[x][y] = temp;
 			}
 		}
+	}
+
+	protected void ganar() {
+		String[] option = { "Volver a empezar", "Salgo por cagon" };
+		int eligio = JOptionPane.showOptionDialog(null, "GANASTE!! bien ahi wachin", "ganaste!!",
+				JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, option, option[1]);
+
+		if (eligio == 0)
+			reinicio();
+		else
+			ventana.dispose();
+	}
+
+	private void reinicio() {
+		int cantNumeros = (int) (Math.random() * (dificultad * 15)) + 20;
+
+		while (!generadorInicial())
+			;
+		borrarCuadros(cantNumeros);
+
+		
+	}
+
+	private boolean gano() {
+		int x = -1, y;
+		while (++x < 9) {
+			y = -1;
+			while (++y < 9) {
+				if (this.numeros[x][y].getText().isEmpty())
+					return false;
+			}
+		}
+		return true;
 	}
 
 	private boolean add(int indexY, int indexX, int numero) {
